@@ -1,8 +1,51 @@
+体验剩48:38
+参考附件，附件是一个web页面，主要功能是用来统计yes or no，所以页面上会有两个按钮，分别对应Yes和No，用来统计被按下的次数，同时将按下总数和各自的次数实时刷新在页面上，我要为该页面增加一些功能，1、可以手动输入副标题，2、要禁用网页双击放大的功能，避免连续按钮的时候网页被错误放大
+
+Now I'll create the modified version with both features added.Actually, the subtitle click handler has a fragile re-attach pattern. Let me clean that up:改好了，两个功能都已加上：
+
+1. 副标题输入
+
+    标题下方新增副标题区域，默认显示"点击输入副标题..."占位文字
+    点击后变成输入框，可直接编辑（最长80字）
+    按 Enter 或点击其他区域确认，按 Esc 取消
+    副标题内容会随投票数据一起保存到 localStorage
+
+
+2. 禁用双击放大
+
+    dblclick 事件 preventDefault() 阻止默认缩放行为
+    touch-action: manipulation 在 CSS 层面禁用双击缩放和手势缩放
+    user-scalable=no 在 viewport meta 中锁定缩放
+    按钮添加了 -webkit-tap-highlight-color: transparent 避免点击时的闪烁
+
+
+文件保存在 index.html，可以直接打开使用。
+非常好，我需要固定一下页面的布局和结构，三个统计数据（总次数，yes次数，no次数）中，总次数单独放在一行的中间，剩下两个分列在下一行的中间
+
+改好了。布局现在是：
+
+text
+
+text
+
+      [Total: 0]
+
+  [Yes: 0]  [No: 0]
+
+
+    .stats 改为 flex-direction: column，居中对齐
+    Total 卡片独占一行居中
+    Yes 和 No 用 .stats-row 包裹，同一行并排居中显示
+
+文件
+
+html
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Yes or No</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -22,6 +65,7 @@
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     overflow: hidden;
     position: relative;
+    touch-action: manipulation;
   }
 
   /* 背景艺术字 */
@@ -102,8 +146,57 @@
     font-style: italic;
   }
 
+  /* 副标题 */
+  .subtitle-wrapper {
+    margin-top: -28px;
+    text-align: center;
+  }
+  .subtitle-text {
+    font-size: clamp(1rem, 2.5vw, 1.4rem);
+    color: rgba(255, 255, 255, 0.45);
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    min-height: 1.6em;
+    cursor: text;
+    transition: color 0.2s ease;
+    word-break: break-word;
+  }
+  .subtitle-text:hover {
+    color: rgba(255, 255, 255, 0.6);
+  }
+  .subtitle-text.empty::after {
+    content: '点击输入副标题...';
+    color: rgba(255, 255, 255, 0.2);
+    font-style: italic;
+  }
+  .subtitle-input {
+    font-size: clamp(1rem, 2.5vw, 1.4rem);
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 6px 14px;
+    text-align: center;
+    outline: none;
+    font-family: inherit;
+    width: min(400px, 85vw);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .subtitle-input:focus {
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.08);
+  }
+
   /* 统计区 */
   .stats {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+  .stats-row {
     display: flex;
     gap: 32px;
     flex-wrap: wrap;
@@ -166,6 +259,7 @@
     transition: transform 0.15s ease, box-shadow 0.2s ease;
     overflow: hidden;
     outline: none;
+    -webkit-tap-highlight-color: transparent;
   }
   .btn::before {
     content: '';
@@ -297,18 +391,25 @@
 <div class="container">
   <div class="title">Yes <span class="or">or</span> No</div>
 
+  <!-- 副标题 -->
+  <div class="subtitle-wrapper">
+    <div class="subtitle-text empty" id="subtitleDisplay"></div>
+  </div>
+
   <div class="stats">
     <div class="stat-card stat-total">
       <div class="number" id="total">0</div>
       <div class="label">Total</div>
     </div>
-    <div class="stat-card stat-yes">
-      <div class="number" id="yesCount">0</div>
-      <div class="label">Yes</div>
-    </div>
-    <div class="stat-card stat-no">
-      <div class="number" id="noCount">0</div>
-      <div class="label">No</div>
+    <div class="stats-row">
+      <div class="stat-card stat-yes">
+        <div class="number" id="yesCount">0</div>
+        <div class="label">Yes</div>
+      </div>
+      <div class="stat-card stat-no">
+        <div class="number" id="noCount">0</div>
+        <div class="label">No</div>
+      </div>
     </div>
   </div>
 
@@ -332,8 +433,11 @@
 <div class="hint">Press <kbd>Y</kbd> for Yes &nbsp;·&nbsp; <kbd>N</kbd> for No</div>
 
 <script>
+  // 禁用双击放大
+  document.addEventListener('dblclick', e => e.preventDefault(), { passive: false });
+
   // 状态
-  let yes = 0, no = 0;
+  let yes = 0, no = 0, subtitle = '';
   const $ = id => document.getElementById(id);
 
   function render() {
@@ -348,6 +452,17 @@
     $('barNo').style.width = nPct + '%';
     $('pctYes').textContent = Math.round(yPct) + '%';
     $('pctNo').textContent = Math.round(nPct) + '%';
+  }
+
+  function renderSubtitle() {
+    const el = $('subtitleDisplay');
+    if (subtitle) {
+      el.textContent = subtitle;
+      el.classList.remove('empty');
+    } else {
+      el.textContent = '';
+      el.classList.add('empty');
+    }
   }
 
   function bump(id) {
@@ -371,15 +486,54 @@
   }
 
   // 持久化
-  function save() { localStorage.setItem('yon', JSON.stringify({ yes, no })); }
+  function save() { localStorage.setItem('yon', JSON.stringify({ yes, no, subtitle })); }
   function load() {
     try {
       const d = JSON.parse(localStorage.getItem('yon'));
-      if (d) { yes = d.yes || 0; no = d.no || 0; }
+      if (d) { yes = d.yes || 0; no = d.no || 0; subtitle = d.subtitle || ''; }
     } catch {}
   }
   load();
   render();
+  renderSubtitle();
+
+  // 副标题编辑
+  function setupSubtitleClick() {
+    $('subtitleDisplay').addEventListener('click', startEditSubtitle);
+  }
+
+  function startEditSubtitle() {
+    const wrapper = this.parentNode;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'subtitle-input';
+    input.value = subtitle;
+    input.placeholder = '输入副标题...';
+    input.maxLength = 80;
+
+    wrapper.replaceChild(input, this);
+    input.focus();
+
+    function finish() {
+      subtitle = input.value.trim();
+      save();
+      const display = document.createElement('div');
+      display.id = 'subtitleDisplay';
+      display.className = 'subtitle-text' + (subtitle ? '' : ' empty');
+      wrapper.replaceChild(display, input);
+      display.addEventListener('click', startEditSubtitle);
+      renderSubtitle();
+    }
+
+    input.addEventListener('blur', finish);
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') input.blur();
+      if (e.key === 'Escape') { input.value = subtitle; input.blur(); }
+      e.stopPropagation(); // 防止触发 Y/N 快捷键
+    });
+  }
+
+  setupSubtitleClick();
 
   // 事件
   $('btnYes').addEventListener('click', function(e) {
@@ -394,6 +548,7 @@
 
   // 键盘快捷键
   document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT') return; // 输入框中不触发
     if (e.key === 'y' || e.key === 'Y') { $('btnYes').click(); }
     if (e.key === 'n' || e.key === 'N') { $('btnNo').click(); }
   });
@@ -413,3 +568,4 @@
 </script>
 </body>
 </html>
+
