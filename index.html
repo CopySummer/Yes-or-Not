@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yes or No</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  @font-face {
+    font-family: 'Impact';
+    src: local('Impact'), local('Arial Black');
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #0a0a1a;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* 背景艺术字 */
+  .bg-text {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 18vw;
+    font-weight: 900;
+    font-family: 'Impact', 'Arial Black', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    opacity: 0.35;
+    z-index: 0;
+    text-shadow: none;
+    filter: blur(1px);
+  }
+
+  /* 粒子背景 */
+  .particles {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .particles span {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    animation: float linear infinite;
+  }
+  @keyframes float {
+    0%   { transform: translateY(100vh) scale(0); opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: 1; }
+    100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 48px;
+  }
+
+  /* 标题 */
+  .title {
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 900;
+    font-family: 'Impact', 'Arial Black', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: linear-gradient(135deg, #e2e2e2, #ffffff, #c0c0c0);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+    position: relative;
+  }
+  .title .or {
+    background: linear-gradient(135deg, #f7971e, #ffd200);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0 0.15em;
+    font-style: italic;
+  }
+
+  /* 统计区 */
+  .stats {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .stat-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 24px 40px;
+    text-align: center;
+    min-width: 130px;
+    backdrop-filter: blur(12px);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  }
+  .stat-card .number {
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1;
+    transition: transform 0.2s ease;
+  }
+  .stat-card .number.bump {
+    transform: scale(1.3);
+  }
+  .stat-card .label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-top: 8px;
+    opacity: 0.5;
+  }
+  .stat-total .number  { color: #e0e0e0; }
+  .stat-yes .number    { color: #4ade80; }
+  .stat-no .number     { color: #f87171; }
+
+  /* 按钮区 */
+  .buttons {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .btn {
+    position: relative;
+    width: 160px;
+    height: 160px;
+    border: none;
+    border-radius: 50%;
+    font-size: 2.2rem;
+    font-weight: 800;
+    font-family: 'Impact', 'Arial Black', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    color: #fff;
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
+    overflow: hidden;
+    outline: none;
+  }
+  .btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .btn:hover {
+    transform: scale(1.08);
+  }
+  .btn:active {
+    transform: scale(0.93);
+  }
+
+  .btn-yes {
+    background: linear-gradient(135deg, #059669, #34d399);
+    box-shadow: 0 8px 32px rgba(52, 211, 153, 0.35), inset 0 -4px 12px rgba(0,0,0,0.15);
+  }
+  .btn-yes:hover {
+    box-shadow: 0 12px 48px rgba(52, 211, 153, 0.5), inset 0 -4px 12px rgba(0,0,0,0.15);
+  }
+  .btn-yes::before {
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.25), transparent 60%);
+    opacity: 1;
+  }
+
+  .btn-no {
+    background: linear-gradient(135deg, #dc2626, #f87171);
+    box-shadow: 0 8px 32px rgba(248, 113, 113, 0.35), inset 0 -4px 12px rgba(0,0,0,0.15);
+  }
+  .btn-no:hover {
+    box-shadow: 0 12px 48px rgba(248, 113, 113, 0.5), inset 0 -4px 12px rgba(0,0,0,0.15);
+  }
+  .btn-no::before {
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.25), transparent 60%);
+    opacity: 1;
+  }
+
+  /* 点击涟漪 */
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(0);
+    animation: ripple-anim 0.6s ease-out forwards;
+    pointer-events: none;
+  }
+  @keyframes ripple-anim {
+    to { transform: scale(4); opacity: 0; }
+  }
+
+  /* 比例条 */
+  .bar-container {
+    width: min(400px, 85vw);
+    height: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 99px;
+    overflow: hidden;
+    display: flex;
+  }
+  .bar-yes {
+    height: 100%;
+    background: linear-gradient(90deg, #059669, #34d399);
+    border-radius: 99px 0 0 99px;
+    transition: width 0.4s ease;
+  }
+  .bar-no {
+    height: 100%;
+    background: linear-gradient(90deg, #f87171, #dc2626);
+    border-radius: 0 99px 99px 0;
+    transition: width 0.4s ease;
+  }
+
+  /* 百分比 */
+  .percent-row {
+    display: flex;
+    justify-content: space-between;
+    width: min(400px, 85vw);
+    font-size: 0.85rem;
+    opacity: 0.5;
+  }
+
+  /* 重置按钮 */
+  .reset {
+    margin-top: 12px;
+    background: none;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.3);
+    font-size: 0.75rem;
+    padding: 6px 18px;
+    border-radius: 99px;
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    transition: all 0.3s ease;
+  }
+  .reset:hover {
+    border-color: rgba(255,255,255,0.3);
+    color: rgba(255,255,255,0.6);
+  }
+
+  /* 键盘提示 */
+  .hint {
+    position: fixed;
+    bottom: 20px;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.2);
+    letter-spacing: 0.1em;
+  }
+  .hint kbd {
+    display: inline-block;
+    padding: 2px 8px;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 4px;
+    font-family: inherit;
+    margin: 0 2px;
+  }
+</style>
+</head>
+<body>
+
+<!-- 背景艺术字 -->
+<div class="bg-text">Yes or No</div>
+
+<!-- 粒子 -->
+<div class="particles" id="particles"></div>
+
+<div class="container">
+  <div class="title">Yes <span class="or">or</span> No</div>
+
+  <div class="stats">
+    <div class="stat-card stat-total">
+      <div class="number" id="total">0</div>
+      <div class="label">Total</div>
+    </div>
+    <div class="stat-card stat-yes">
+      <div class="number" id="yesCount">0</div>
+      <div class="label">Yes</div>
+    </div>
+    <div class="stat-card stat-no">
+      <div class="number" id="noCount">0</div>
+      <div class="label">No</div>
+    </div>
+  </div>
+
+  <div class="buttons">
+    <button class="btn btn-yes" id="btnYes" aria-label="Vote Yes">Yes</button>
+    <button class="btn btn-no" id="btnNo" aria-label="Vote No">No</button>
+  </div>
+
+  <div class="bar-container">
+    <div class="bar-yes" id="barYes" style="width:50%"></div>
+    <div class="bar-no" id="barNo" style="width:50%"></div>
+  </div>
+  <div class="percent-row">
+    <span id="pctYes">50%</span>
+    <span id="pctNo">50%</span>
+  </div>
+
+  <button class="reset" id="btnReset">Reset</button>
+</div>
+
+<div class="hint">Press <kbd>Y</kbd> for Yes &nbsp;·&nbsp; <kbd>N</kbd> for No</div>
+
+<script>
+  // 状态
+  let yes = 0, no = 0;
+  const $ = id => document.getElementById(id);
+
+  function render() {
+    const total = yes + no;
+    $('total').textContent = total;
+    $('yesCount').textContent = yes;
+    $('noCount').textContent = no;
+
+    const yPct = total ? (yes / total * 100) : 50;
+    const nPct = total ? (no / total * 100) : 50;
+    $('barYes').style.width = yPct + '%';
+    $('barNo').style.width = nPct + '%';
+    $('pctYes').textContent = Math.round(yPct) + '%';
+    $('pctNo').textContent = Math.round(nPct) + '%';
+  }
+
+  function bump(id) {
+    const el = $(id);
+    el.classList.remove('bump');
+    void el.offsetWidth; // reflow
+    el.classList.add('bump');
+    setTimeout(() => el.classList.remove('bump'), 200);
+  }
+
+  function addRipple(btn, e) {
+    const r = document.createElement('span');
+    r.className = 'ripple';
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    r.style.width = r.style.height = size + 'px';
+    r.style.left = (e.clientX - rect.left - size / 2) + 'px';
+    r.style.top = (e.clientY - rect.top - size / 2) + 'px';
+    btn.appendChild(r);
+    setTimeout(() => r.remove(), 600);
+  }
+
+  // 持久化
+  function save() { localStorage.setItem('yon', JSON.stringify({ yes, no })); }
+  function load() {
+    try {
+      const d = JSON.parse(localStorage.getItem('yon'));
+      if (d) { yes = d.yes || 0; no = d.no || 0; }
+    } catch {}
+  }
+  load();
+  render();
+
+  // 事件
+  $('btnYes').addEventListener('click', function(e) {
+    yes++; render(); bump('yesCount'); addRipple(this, e); save();
+  });
+  $('btnNo').addEventListener('click', function(e) {
+    no++; render(); bump('noCount'); addRipple(this, e); save();
+  });
+  $('btnReset').addEventListener('click', () => {
+    yes = 0; no = 0; render(); save();
+  });
+
+  // 键盘快捷键
+  document.addEventListener('keydown', e => {
+    if (e.key === 'y' || e.key === 'Y') { $('btnYes').click(); }
+    if (e.key === 'n' || e.key === 'N') { $('btnNo').click(); }
+  });
+
+  // 粒子生成
+  (function initParticles() {
+    const box = $('particles');
+    for (let i = 0; i < 40; i++) {
+      const s = document.createElement('span');
+      s.style.left = Math.random() * 100 + '%';
+      s.style.animationDuration = (8 + Math.random() * 12) + 's';
+      s.style.animationDelay = (Math.random() * 10) + 's';
+      s.style.width = s.style.height = (2 + Math.random() * 3) + 'px';
+      box.appendChild(s);
+    }
+  })();
+</script>
+</body>
+</html>
